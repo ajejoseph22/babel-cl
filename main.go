@@ -93,19 +93,19 @@ func calculateMovingAverages(events []Event, windowSize int) []Output {
 	translationCount := 0
 
 	for !currentMinute.After(endTime) {
-		// Remove events that are outside the window
-		for len(window) > 0 && window[0].Time.Before(currentMinute.Add(-time.Duration(windowSize)*time.Minute)) {
-			sum -= window[0].Duration
-			translationCount--
-			window = window[1:]
-		}
-
 		// Add events that are in the current minute
 		for len(timeEvents) > 0 && !timeEvents[0].Time.After(currentMinute) {
 			sum += timeEvents[0].Duration
 			translationCount++
 			window = append(window, timeEvents[0])
 			timeEvents = timeEvents[1:]
+		}
+
+		// Remove events that are outside the window
+		for len(window) > 0 && window[0].Time.Before(currentMinute.Add(-time.Duration(windowSize)*time.Minute)) {
+			sum -= window[0].Duration
+			translationCount--
+			window = window[1:]
 		}
 
 		// Compute the average
