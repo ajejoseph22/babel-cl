@@ -9,6 +9,31 @@ func TestReadEvents(t *testing.T) {
 	if len(events) == 0 {
 		t.Errorf("No events were read from the file")
 	}
+
+	expectedEvents := []Event{
+		{
+			Timestamp: "2018-12-26 18:11:08.509654",
+			Duration:  20,
+		},
+		{
+			Timestamp: "2018-12-26 18:15:19.903159",
+			Duration:  31,
+		},
+		{
+			Timestamp: "2018-12-26 18:23:19.903159",
+			Duration:  54,
+		},
+	}
+
+	if len(events) != len(expectedEvents) {
+		t.Errorf("Expected %d events, got %d", len(expectedEvents), len(events))
+	}
+
+	for i, event := range events {
+		if event.Timestamp != expectedEvents[i].Timestamp || event.Duration != expectedEvents[i].Duration {
+			t.Errorf("At index %d: expected %v, got %v", i, expectedEvents[i], event)
+		}
+	}
 }
 
 func TestCalculateMovingAverages(t *testing.T) {
