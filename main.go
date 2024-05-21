@@ -65,15 +65,15 @@ func readEvents(filename string) []Event {
 }
 
 func calculateMovingAverages(events []Event, windowSize int) []Output {
-	if len(events) == 0 {
-		return []Output{}
-	}
-
-	// Parsing timestamps and converting to TimeEvent
 	type TimeEvent struct {
 		Time     time.Time
 		Duration int
 	}
+
+	if len(events) == 0 {
+		return []Output{}
+	}
+
 	var timeEvents []TimeEvent
 	for _, event := range events {
 		t, err := time.Parse("2006-01-02 15:04:05.000000", event.Timestamp)
@@ -84,30 +84,44 @@ func calculateMovingAverages(events []Event, windowSize int) []Output {
 		timeEvents = append(timeEvents, TimeEvent{Time: t, Duration: event.Duration})
 	}
 
-	// Calculating moving averages
 	var outputs []Output
-	startTime := timeEvents[0].Time.Truncate(time.Minute)
-	endTime := timeEvents[len(timeEvents)-1].Time.Add(time.Minute).Truncate(time.Minute)
+	currentMinute := timeEvents[0].Time.Truncate(time.Minute)
+	endTime := timeEvents[len(timeEvents)-1].Time.Truncate(time.Minute).Add(time.Minute)
 
-	// Iterate from startTime to endTime by minute
-	for currentTime := startTime; !currentTime.After(endTime); currentTime = currentTime.Add(time.Minute) {
-		var sum int
-		var count int
-		for _, te := range timeEvents {
-			lowerBoundWindow := currentTime.Add(-time.Duration(windowSize) * time.Minute)
-			if te.Time.After(lowerBoundWindow) && te.Time.Before(currentTime) {
-				sum += te.Duration
-				count++
-			}
+	window := []TimeEvent{}
+	sum := 0
+	translationCount := 0
+
+	for !currentMinute.After(endTime) {
+		// Remove events that are outside the window
+		for len(window) > 0 && window[0].Time.Before(currentMinute.Add(-time.Duration(windowSize)*time.Minute)) {
+			sum -= window[0].Duration
+			translationCount--
+			window = window[1:]
 		}
+
+		// Add events that are in the current minute
+		for len(timeEvents) > 0 && !timeEvents[0].Time.After(currentMinute) {
+			sum += timeEvents[0].Duration
+			translationCount++
+			window = append(window, timeEvents[0])
+			timeEvents = timeEvents[1:]
+		}
+
+		// Compute the average
 		average := 0.0
-		if count > 0 {
-			average = float64(sum) / float64(count)
+		if translationCount > 0 {
+			average = float64(sum) / float64(translationCount)
 		}
+
+		// Append the result
 		outputs = append(outputs, Output{
-			Date:                currentTime.Format("2006-01-02 15:04:05"),
+			Date:                currentMinute.Format("2006-01-02 15:04:05"),
 			AverageDeliveryTime: average,
 		})
+
+		// Move on to the next minute
+		currentMinute = currentMinute.Add(time.Minute)
 	}
 
 	return outputs
