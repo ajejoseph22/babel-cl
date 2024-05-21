@@ -19,7 +19,7 @@ A simple command-line application that parses a stream of events and produces a 
    ```
 3. Run the application:
    ```sh
-   ./babel --input_file ./files/input.json --output_file .<file path> --window_size <window size>
+   ./babel --input_file ./files/input.json --output_file <file path> --window_size <window size>
    ```
    The output file will be generated in the specified path
 4. Run the tests:
